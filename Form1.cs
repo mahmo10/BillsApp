@@ -14,7 +14,9 @@ namespace Bills
 {
     public partial class Form1 : Form
     {
-
+        private byte _index;
+        private float _NewPrice = 0;
+        
         class Bill
         {
          
@@ -42,9 +44,69 @@ namespace Bills
             InitializeComponent();
         }
 
-        private void label6_Click(object sender, EventArgs e)
+       private decimal GetCalculateTotal()
         {
+            return numQuantity.Value*numPriceItem.Value;
+        }
 
+        private float GetPriceItem()
+        {
+            if(_NewPrice!=0)
+            {
+                return _NewPrice;
+            }
+            switch (_index)
+            {
+                case 0: return 1;
+                case 1: return 3;
+                case 2: return 4;
+                case 3: return 5;
+                case 4: return 3;
+                default: return 0;
+            }
+        }
+        private float GetPriceTotal()
+        {
+            return GetPriceItem() * Convert.ToSingle(numQuantity.Value);
+        }
+        private float GetTaxrate()
+        {
+            return  Convert.ToSingle (GetPriceTotal() * 0.15);
+        }
+        private float GetPriceTotalwithTaxrate()
+        {
+            return GetPriceTotal() + GetTaxrate();
+        }
+
+        private void Price()
+        {
+            lblTotal.Text=GetPriceTotal().ToString();
+            lblTaxrate.Text=GetPriceTotalwithTaxrate().ToString();
+            
+        }
+  
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            for (byte i = 0; i < cmItems.Items.Count; i++)
+            {
+                if (cmItems.SelectedIndex==i)
+                {
+                    _index = i;
+                    Price();
+                }
+            }
+        }
+
+        private void numQuantity_ValueChanged(object sender, EventArgs e)
+        {
+            Price();
+        }
+
+        private void numPriceItem_ValueChanged(object sender, EventArgs e)
+        {
+            _NewPrice= (float) numPriceItem.Value;
+            Price();
         }
     }
 }
