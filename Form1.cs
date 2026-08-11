@@ -14,60 +14,33 @@ namespace Bills
 {
     public partial class Form1 : Form
     {
-        private byte _index;
-        private float _NewPrice = 0;
-        
-        class Bill
+        private string _ItemName;
+        Dictionary<string, float> price = new Dictionary<string, float>();
+        private void AddtoData()
         {
-         
-            private string _Name;
-            private short _Quantity;
-            private float _Price;
-            private float _Total;
-            
-
-            public void SetName(string name)
-            {
-                _Name = name;
-            }
-
-            public string GetName()
-            {
-                return _Name;
-            }
-
-            
-
+            price.Add("ورق A4 80 gm", 1);
+            price.Add("ورق مقوى A4 180 gm", 3);
+            price.Add("ورق A3 80 gm", 4);
+            price.Add("تغليف سلك", 5);
+            price.Add("تغليف شطرطون", 3);
         }
+      
         public Form1()
         {
+           
             InitializeComponent();
+            AddtoData();
         }
 
-       private decimal GetCalculateTotal()
+        private float GetPriceItem(string Item)
         {
-            return numQuantity.Value*numPriceItem.Value;
-        }
-
-        private float GetPriceItem()
-        {
-            if(_NewPrice!=0)
-            {
-                return _NewPrice;
-            }
-            switch (_index)
-            {
-                case 0: return 1;
-                case 1: return 3;
-                case 2: return 4;
-                case 3: return 5;
-                case 4: return 3;
-                default: return 0;
-            }
+            if(price.ContainsKey(Item)) return price[Item];
+            return 0;
+            
         }
         private float GetPriceTotal()
         {
-            return GetPriceItem() * Convert.ToSingle(numQuantity.Value);
+            return Convert.ToSingle(numPriceItem.Value * numQuantity.Value);
         }
         private float GetTaxrate()
         {
@@ -88,14 +61,9 @@ namespace Bills
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            for (byte i = 0; i < cmItems.Items.Count; i++)
-            {
-                if (cmItems.SelectedIndex==i)
-                {
-                    _index = i;
-                    Price();
-                }
-            }
+             
+             _ItemName= cbItems.SelectedItem.ToString();
+            Price();
         }
 
         private void numQuantity_ValueChanged(object sender, EventArgs e)
@@ -105,7 +73,7 @@ namespace Bills
 
         private void numPriceItem_ValueChanged(object sender, EventArgs e)
         {
-            _NewPrice= (float) numPriceItem.Value;
+           
             Price();
         }
     }
