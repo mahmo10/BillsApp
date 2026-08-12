@@ -4,18 +4,25 @@ using System.ComponentModel;
 using System.Configuration;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Printing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Bills
 {
     public partial class Form1 : Form
     {
         private string _ItemName;
-        
+        private float _Quantity;
+        private float _Price;
+        private float TaxRate = 0.15f;
+        PrintDocument printDocument = new PrintDocument();
+
+
         Dictionary<string, float> price = new Dictionary<string, float>();
         private void AddtoData()
         {
@@ -31,7 +38,12 @@ namespace Bills
           
             InitializeComponent();
             AddtoData();
+    
+
+            printDocument.PrintPage += PrintDocument_PrintPage;
         }
+
+     
 
         private float GetPriceItem()
         {
@@ -39,27 +51,49 @@ namespace Bills
             return 0;
             
         }
-        private float GetPriceTotal()
+        private float GetTotalPrice()
         {
-            return Convert.ToSingle(numPriceItem.Value * numQuantity.Value);
+            return  _Price * _Quantity;
         }
         private float GetTaxrate()
         {
-            float TaxRate = 0.15f;
             return   TaxRate;
+        }
+
+        private float Calculatingtaxwithintotal()
+        {
+            return GetTaxrate()*GetTotalPrice();
         }
         private float GetPriceTotalwithTaxrate()
         {
-            return   GetTaxrate()* GetPriceTotal();
+            return Calculatingtaxwithintotal() + GetTotalPrice();
         }
 
         private void UpdatePrice()
         {
-            lblTotal.Text=GetPriceTotal().ToString("F2");
+            lblTotal.Text= GetTotalPrice().ToString("F2");
             lblTaxrate.Text=GetPriceTotalwithTaxrate().ToString("F2");
             
         }
-  
+
+        private void HandleChangePrice()
+        {
+            _Price = Convert.ToSingle(numPriceItem.Value);
+            UpdatePrice();
+        }
+
+        private void HandleChangeQuantity()
+        {
+            _Quantity = Convert.ToSingle(numQuantity.Value);
+            UpdatePrice() ;
+
+        }
+
+        private void Changeproduct()
+        {
+            numQuantity.Value = (decimal)_Quantity;
+            numPriceItem.Value = (decimal)_Price;
+        }
         private void UpdateTotalBill()
         {
             float TotalBill=0;
@@ -71,51 +105,140 @@ namespace Bills
         }
         private void AddItemToBill()
         {
-            string ItemName=_ItemName;
-            decimal price = numPriceItem.Value;
-            decimal Quantity = numQuantity.Value;
+           if(cbItems.SelectedItem==null)
+            {
+                MessageBox.Show("يرجي إختيار الصنف", "الصنف",
+                    MessageBoxButtons.OK,MessageBoxIcon.Error);
+                return;
+            }
             float Total= (float)Math.Round(GetPriceTotalwithTaxrate(),2);
 
-            dgvData.Rows.Add(ItemName,Quantity, price, Total);
+            dgvData.Rows.Add(_ItemName,_Quantity, _Price, Total);
 
             UpdateTotalBill();
+            
+         
+        }
+        private void Reset()
+        {
+            cbItems.SelectedItem = null;
+
+            numPriceItem.ValueChanged-=numPriceItem_ValueChanged; 
+            numQuantity.ValueChanged-=numQuantity_ValueChanged;
+
+            numPriceItem.Value=1;
+            numQuantity.Value = 1;
+
+            numPriceItem.ValueChanged += numPriceItem_ValueChanged;
+            numQuantity.ValueChanged += numQuantity_ValueChanged;
+
+            lblTotal.Text=0.ToString();
+            lblTaxrate.Text=0.ToString();
+
+        }
+
+        private void ResetForm()
+        {
             Reset();
+            dgvData.Rows.Clear();
+            lbltotalfinal.Text = string.Empty;
         }
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-             _ItemName= cbItems.SelectedItem.ToString();
-            numPriceItem.Value = (decimal)GetPriceItem();
-        }
+            if (cbItems.SelectedItem == null)
+                return;
+            _ItemName = cbItems.SelectedItem.ToString();
+           _Price=GetPriceItem();
+            _Quantity = 1;
+            Changeproduct();
 
-        private void Reset()
-        {
-           // cbItems.Items.;
-            
         }
         private void numQuantity_ValueChanged(object sender, EventArgs e)
         {
+            if(numQuantity.Value !=(decimal) _Quantity )
+            {
+                HandleChangeQuantity();
+            }
+            else
             UpdatePrice();
+
         }
 
         private void numPriceItem_ValueChanged(object sender, EventArgs e)
         {
-           
+            if (numPriceItem.Value != (decimal)_Price)
+            {
+                HandleChangePrice();
+            }
+            else
             UpdatePrice();
         }
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
             AddItemToBill();
+            Reset();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void PrintDocument_PrintPage(object sender, PrintPageEventArgs e)
         {
-          
+            float x = 20;
+            float y = 20;
+
+            // عنوان الفاتورة
+            e.Graphics.DrawString("فاتورة شراء", new Font("Arial", 18, FontStyle.Bold), Brushes.Black, 250, y);
+            y += 40;
+
+            // رأس الجدول
+            e.Graphics.DrawString("الصنف", new Font("Arial", 12), Brushes.Black, x, y);
+            e.Graphics.DrawString("الكمية", new Font("Arial", 12), Brushes.Black, x + 150, y);
+            e.Graphics.DrawString("السعر", new Font("Arial", 12), Brushes.Black, x + 250, y);
+            e.Graphics.DrawString("الإجمالي", new Font("Arial", 12), Brushes.Black, x + 350, y);
+            y += 30;
+
+            // طباعة الصفوف
+            foreach (DataGridViewRow row in dgvData.Rows)
+            {
+                // تجاهل الصف الأخير الفاضي
+                if (row.IsNewRow)
+                    continue;
+
+                // حماية من null
+                string item = row.Cells[0].Value?.ToString() ?? "";
+                string qty = row.Cells[1].Value?.ToString() ?? "";
+                string price = row.Cells[2].Value?.ToString() ?? "";
+                string total = row.Cells[3].Value?.ToString() ?? "";
+
+                e.Graphics.DrawString(item, new Font("Arial", 12), Brushes.Black, x, y);
+                e.Graphics.DrawString(qty, new Font("Arial", 12), Brushes.Black, x + 150, y);
+                e.Graphics.DrawString(price, new Font("Arial", 12), Brushes.Black, x + 250, y);
+                e.Graphics.DrawString(total, new Font("Arial", 12), Brushes.Black, x + 350, y);
+
+                y += 25;
+            }
+
+            y += 20;
+
+            // إجمالي الفاتورة
+            e.Graphics.DrawString("إجمالي الفاتورة: " + lbltotalfinal.Text,
+                new Font("Arial", 14, FontStyle.Bold), Brushes.Black, x, y);
         }
 
-        private void label7_Click(object sender, EventArgs e)
+
+
+        private void btnNew_Click(object sender, EventArgs e)
         {
-
+            ResetForm();
         }
+
+        private void btnPrint_Click(object sender, EventArgs e)
+        {
+       
+            PrintPreviewDialog preview = new PrintPreviewDialog();
+            preview.Document = printDocument;
+            preview.ShowDialog();
+        
+
     }
+}
 }
