@@ -71,7 +71,7 @@ namespace Bills
 
         private void UpdatePrice()
         {
-            lblTotal.Text= GetTotalPrice().ToString("F2");
+            
             lblTaxrate.Text=GetPriceTotalwithTaxrate().ToString("F2");
             
         }
@@ -132,7 +132,7 @@ namespace Bills
             numPriceItem.ValueChanged += numPriceItem_ValueChanged;
             numQuantity.ValueChanged += numQuantity_ValueChanged;
 
-            lblTotal.Text=0.ToString();
+           
             lblTaxrate.Text=0.ToString();
 
         }
@@ -180,24 +180,39 @@ namespace Bills
             Reset();
         }
 
+        private float StartText(float PageWidth,Font font,string Title, PrintPageEventArgs e)
+        {
+           
+            SizeF sizeLogo = e.Graphics.MeasureString(Title, font);
+
+            return  PageWidth - sizeLogo.Width;
+        }
+
+        private float CenterText(float PageWidth, Font font, string Title, PrintPageEventArgs e)
+        {
+            SizeF sizeLogo = e.Graphics.MeasureString(Title, font);
+
+            return (PageWidth - sizeLogo.Width)/2;
+        }
         private void PrintDocument_PrintPage(object sender, PrintPageEventArgs e)
         {
             e.Graphics.PageUnit=GraphicsUnit.Millimeter;
 
+            Pen Pen = new Pen(Brushes.Black, 0.5f);
 
-            StringFormat format = new StringFormat();
-            format.Alignment = StringAlignment.Far;
-            format.FormatFlags = StringFormatFlags.DirectionRightToLeft;
-         
+
             // Size A4
-           //y 210;
-          // x  297;
+            float PageWidth = 210;
+
+            float Height = 297;
 
             float left = 10;
-            float center = 105;
+        
             float right = 200;
 
-            float headerY = 10;
+            float headerY = 30;
+
+            float center = 105;
 
             float customerY = 40;
 
@@ -205,43 +220,50 @@ namespace Bills
 
             float totalY = 240;
 
-            float signY = 270;
-
-
 
             // Logo
             string Logo = "محمود";
-            e.Graphics.DrawString(Logo, new Font("PT Bold Heading", 20, FontStyle.Regular)
-                , Brushes.Black,right-20 , headerY+20);
+            Font fontLogo = new Font("PT Bold Heading", 20, FontStyle.Regular);
+      
+            float rightX = StartText(PageWidth,fontLogo,Logo,e);
 
-
+            e.Graphics.DrawString(Logo, fontLogo
+                ,Brushes.Black,rightX-20 , headerY);
 
             // Date
 
-            e.Graphics.DrawString(DateTime.Now.ToString("yyyy-MM-dd    hh:mm:ff  t")
-                , new Font("Arial", 12, FontStyle.Regular), Brushes.Black,right-40, headerY+30);
+            string DateTimeNow = DateTime.Now.ToString("yyyy-MM-dd    hh:mm:ff  t");
+
+            e.Graphics.DrawString(DateTimeNow
+                , new Font("Arial", 12, FontStyle.Regular),
+                Brushes.Black,right-50, headerY+15);
 
 
-            //// Adddres Bill
+            // Adddres Bill
+            string title = "فاتورة شراء";
+            Font font = new Font("Arial", 20, FontStyle.Bold);
+            float centerX = CenterText(PageWidth,font,title,e);
+            e.Graphics.DrawString(title, font, Brushes.Black, centerX,tableY);
 
-            e.Graphics.DrawString("فاتورة شراء", new Font("Arial", 24, FontStyle.Bold),
-                Brushes.Black, center, tableY);
-
-            e.Graphics.DrawLine(Pens.Black, right, tableY+15, left, tableY+15);
-
-
-
-            //// Head
-            e.Graphics.DrawString("الصنف", new Font("PT Bold Heading", 12), Brushes.Black, right-35, tableY+20);
-            e.Graphics.DrawString("السعر", new Font("PT Bold Heading", 12), Brushes.Black,center, tableY + 20);
-            e.Graphics.DrawString("الكمية", new Font("PT Bold Heading", 12), Brushes.Black, center-30, tableY + 20);
-            e.Graphics.DrawString("الإجمالي", new Font("PT Bold Heading", 12), Brushes.Black, left+20, tableY + 20);
+            // Line
+            e.Graphics.DrawLine(Pen, right, tableY+15, left, tableY+15);
 
 
+            // Head
+            e.Graphics.DrawString("الصنف", new Font("PT Bold Heading", 12), Brushes.Black, right - 35, tableY + 20);
+            e.Graphics.DrawString("السعر", new Font("PT Bold Heading", 12), Brushes.Black, center+10, tableY + 20);
+            e.Graphics.DrawString("الكمية", new Font("PT Bold Heading", 12), Brushes.Black, center - 15, tableY + 20);
+            e.Graphics.DrawString("الضريبة", new Font("PT Bold Heading", 12), Brushes.Black, center - 40, tableY + 20);
+            e.Graphics.DrawString("الإجمالي شامل الضريبة", new Font("PT Bold Heading", 12), Brushes.Black, left + 15, tableY + 20);
 
+
+            // PrintLines
             float Line = tableY;
 
-            // طباعة الصفوف
+            Font fontline = new Font("Arial", 12, FontStyle.Regular);
+
+            float LineX=StartText(PageWidth, fontline, title,e);
+
             foreach (DataGridViewRow row in dgvData.Rows)
             {
                
@@ -254,22 +276,41 @@ namespace Bills
                 string price = row.Cells[2].Value?.ToString() ?? "";
                 string total = row.Cells[3].Value?.ToString() ?? "";
 
-                e.Graphics.DrawString(item, new Font("Arial", 12), Brushes.Black, right - 45, Line + 30,format);
-                e.Graphics.DrawString(qty, new Font("Arial", 12), Brushes.Black, center - 30, Line + 30,format);
-                e.Graphics.DrawString(price, new Font("Arial", 12), Brushes.Black, center, Line + 30,format);
-                e.Graphics.DrawString(total, new Font("Arial", 12), Brushes.Black, left + 20, Line + 30,format);
+                e.Graphics.DrawString(item, fontline, Brushes.Black, LineX-30, Line + 30);
+                e.Graphics.DrawString(qty, fontline, Brushes.Black, center - 30, Line + 30);
+                e.Graphics.DrawString(price, fontline, Brushes.Black, center, Line + 30);
+                e.Graphics.DrawString(total, fontline, Brushes.Black, left + 20, Line + 30);
 
                 Line += 10;
-
-                
             }
 
-            e.Graphics.DrawLine(Pens.Black, right, totalY, left, totalY);
+            //Line
+            e.Graphics.DrawLine(Pen, right, totalY, left, totalY);
 
 
-            // Total Bill
-            e.Graphics.DrawString("إجمالي الفاتورة: " + lbltotalfinal.Text,
-                new Font("Arial", 14, FontStyle.Bold), Brushes.Black, center, totalY+10);
+            //Total Bill
+
+           e.Graphics.DrawString("إجمالي " ,
+               new Font("Arial", 16, FontStyle.Bold), Brushes.Black, right-28, totalY + 10);
+
+            string Total=lbltotalfinal.Text;
+
+            e.Graphics.DrawString(Total,
+     new Font("Arial", 16, FontStyle.Bold), Brushes.Black, center-55, totalY + 10);
+
+            e.Graphics.DrawString("الضريبة " ,
+              new Font("Arial", 16, FontStyle.Bold), Brushes.Black, right - 30, totalY + 20);
+
+            string Tax= 5.ToString();
+            e.Graphics.DrawString(Tax,
+             new Font("Arial", 16, FontStyle.Bold), Brushes.Black, center - 55, totalY + 20);
+
+            e.Graphics.DrawString("الإجمالي شامل الضريبة ",
+             new Font("Arial", 16, FontStyle.Bold), Brushes.Black, right - 57, totalY + 30);
+
+            string TotalwithTax=6.ToString();
+              e.Graphics.DrawString(TotalwithTax,
+             new Font("Arial", 16, FontStyle.Bold), Brushes.Black, center - 55, totalY + 30);
         }
 
 
@@ -281,12 +322,33 @@ namespace Bills
 
         private void btnPrint_Click(object sender, EventArgs e)
         {
-       
+            if (dgvData.Rows.Count ==1 )
+            {
+                MessageBox.Show("يرجي إختيار الصنف", "الصنف",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             PrintPreviewDialog preview = new PrintPreviewDialog();
             preview.Document = printDocument;
             preview.ShowDialog();
         
 
     }
-}
+
+        private void txtTax_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            // منع إدخال أي شيء غير الأرقام
+            if (!char.IsDigit(e.KeyChar) && e.KeyChar != '\b')
+            {
+                e.Handled = true;
+                return;
+            }
+
+            // منع إدخال أكثر من 15 رقم
+            if (char.IsDigit(e.KeyChar) && txtTax.Text.Length >= 15)
+            {
+                e.Handled = true;
+            }
+        }
+    }
 }
