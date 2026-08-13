@@ -182,73 +182,94 @@ namespace Bills
 
         private void PrintDocument_PrintPage(object sender, PrintPageEventArgs e)
         {
+            e.Graphics.PageUnit=GraphicsUnit.Millimeter;
+
 
             StringFormat format = new StringFormat();
             format.Alignment = StringAlignment.Far;
             format.FormatFlags = StringFormatFlags.DirectionRightToLeft;
-            int safeRightX = e.MarginBounds.Width ;
-            int safeRightY = e.MarginBounds.Height ;
+         
+            // Size A4
+           //y 210;
+          // x  297;
 
-            float x = 20;
-            float y = 40;
+            float left = 10;
+            float center = 105;
+            float right = 200;
+
+            float headerY = 10;
+
+            float customerY = 40;
+
+            float tableY = 80;
+
+            float totalY = 240;
+
+            float signY = 270;
 
 
 
             // Logo
             string Logo = "محمود";
             e.Graphics.DrawString(Logo, new Font("PT Bold Heading", 20, FontStyle.Regular)
-                , Brushes.Black, safeRightX, safeRightY-900);
+                , Brushes.Black,right-20 , headerY+20);
 
 
 
             // Date
-           
+
             e.Graphics.DrawString(DateTime.Now.ToString("yyyy-MM-dd    hh:mm:ff  t")
-                , new Font("Arial", 12, FontStyle.Regular), Brushes.Black, safeRightX-50, safeRightY-840);
+                , new Font("Arial", 12, FontStyle.Regular), Brushes.Black,right-40, headerY+30);
 
 
-            // Adddres Bill
-          
-            e.Graphics.DrawString("فاتورة شراء", new Font("Arial", 24, FontStyle.Bold), 
-                Brushes.Black, safeRightX-313, safeRightY-800);
-            
-            e.Graphics.DrawLine(Pens.Black, safeRightX-580, safeRightY-750, safeRightX+150, safeRightY-750);
+            //// Adddres Bill
+
+            e.Graphics.DrawString("فاتورة شراء", new Font("Arial", 24, FontStyle.Bold),
+                Brushes.Black, center, tableY);
+
+            e.Graphics.DrawLine(Pens.Black, right, tableY+15, left, tableY+15);
 
 
 
-            // Head
-            e.Graphics.DrawString("الصنف", new Font("PT Bold Heading", 12), Brushes.Black, safeRightX, safeRightY-740);
-            e.Graphics.DrawString("السعر", new Font("PT Bold Heading", 12), Brushes.Black, safeRightX-250 , safeRightY - 740);
-            e.Graphics.DrawString("الكمية", new Font("PT Bold Heading", 12), Brushes.Black, safeRightX-370 , safeRightY - 740);
-            e.Graphics.DrawString("الإجمالي", new Font("PT Bold Heading", 12), Brushes.Black, safeRightX-500 , safeRightY - 740);
-            y += 30;
+            //// Head
+            e.Graphics.DrawString("الصنف", new Font("PT Bold Heading", 12), Brushes.Black, right-35, tableY+20);
+            e.Graphics.DrawString("السعر", new Font("PT Bold Heading", 12), Brushes.Black,center, tableY + 20);
+            e.Graphics.DrawString("الكمية", new Font("PT Bold Heading", 12), Brushes.Black, center-30, tableY + 20);
+            e.Graphics.DrawString("الإجمالي", new Font("PT Bold Heading", 12), Brushes.Black, left+20, tableY + 20);
+
+
+
+            float Line = tableY;
 
             // طباعة الصفوف
             foreach (DataGridViewRow row in dgvData.Rows)
             {
-                // تجاهل الصف الأخير الفاضي
+               
                 if (row.IsNewRow)
                     continue;
 
-                // حماية من null
+               
                 string item = row.Cells[0].Value?.ToString() ?? "";
                 string qty = row.Cells[1].Value?.ToString() ?? "";
                 string price = row.Cells[2].Value?.ToString() ?? "";
                 string total = row.Cells[3].Value?.ToString() ?? "";
 
-                e.Graphics.DrawString(item, new Font("Arial", 12), Brushes.Black, x, y);
-                e.Graphics.DrawString(qty, new Font("Arial", 12), Brushes.Black, x + 150, y);
-                e.Graphics.DrawString(price, new Font("Arial", 12), Brushes.Black, x + 250, y);
-                e.Graphics.DrawString(total, new Font("Arial", 12), Brushes.Black, x + 350, y);
+                e.Graphics.DrawString(item, new Font("Arial", 12), Brushes.Black, right - 45, Line + 30,format);
+                e.Graphics.DrawString(qty, new Font("Arial", 12), Brushes.Black, center - 30, Line + 30,format);
+                e.Graphics.DrawString(price, new Font("Arial", 12), Brushes.Black, center, Line + 30,format);
+                e.Graphics.DrawString(total, new Font("Arial", 12), Brushes.Black, left + 20, Line + 30,format);
 
-                y += 25;
+                Line += 10;
+
+                
             }
 
-            y += 20;
+            e.Graphics.DrawLine(Pens.Black, right, totalY, left, totalY);
 
-            // إجمالي الفاتورة
+
+            // Total Bill
             e.Graphics.DrawString("إجمالي الفاتورة: " + lbltotalfinal.Text,
-                new Font("Arial", 14, FontStyle.Bold), Brushes.Black, x, y);
+                new Font("Arial", 14, FontStyle.Bold), Brushes.Black, center, totalY+10);
         }
 
 
