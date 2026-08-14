@@ -1,7 +1,4 @@
-﻿using MigraDoc.DocumentObjectModel;
-using MigraDoc.DocumentObjectModel.Tables;
-using MigraDoc.Rendering;
-using PdfSharp.Fonts;
+﻿
 using QuestPDF.Fluent;
 using System;
 using System.Collections.Generic;
@@ -12,11 +9,8 @@ using System.Drawing;
 using System.Drawing.Printing;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Bills
 {
@@ -28,7 +22,6 @@ namespace Bills
         private float _TaxRate = 0.15f;
         private float _TotalBill;
 
-        PrintDocument printDocument = new PrintDocument();
 
 
         Dictionary<string, float> price = new Dictionary<string, float>();
@@ -50,22 +43,6 @@ namespace Bills
 
         }
 
-        public class CustomFontResolver : IFontResolver
-        {
-            public string DefaultFontName => "ArabicFont";
-
-            public byte[] GetFont(string faceName)
-            {
-                string fontPath = Path.Combine(Application.StartupPath, "Fonts", "Al-Jazeera-Arabic-Regular.ttf");
-                return File.ReadAllBytes(fontPath);
-            }
-
-            public FontResolverInfo ResolveTypeface(string familyName, bool bold, bool italic)
-            {
-                return new FontResolverInfo("ArabicFont");
-            }
-        }
-
         private void GeneratePDF()
         {
             var doc = new InvoiceDocument
@@ -79,6 +56,8 @@ namespace Bills
 
             string path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\فاتورة.pdf";
             doc.GeneratePdf(path);
+
+
 
             System.Diagnostics.Process.Start(path);
         }
@@ -137,7 +116,14 @@ namespace Bills
         }
         private void AddItemToBill()
         {
-           if(cbItems.SelectedItem==null)
+            if (_Quantity <= 0 || _Price <= 0)
+            {
+                MessageBox.Show("الكمية أو السعر غير صحيح");
+                return;
+            }
+
+
+            if (cbItems.SelectedItem==null)
             {
                 MessageBox.Show("يرجي إختيار الصنف", "الصنف",
                     MessageBoxButtons.OK,MessageBoxIcon.Error);

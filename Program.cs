@@ -14,6 +14,10 @@ namespace Bills
         [STAThread]
         static void Main()
         {
+
+            // 2. إجبار نظام الويندوز على إيقاف الميزات الحديثة المسببة للانهيار
+            Environment.SetEnvironmentVariable("QUESTPDF_COMPANION_DISABLED", "true");
+
             QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
