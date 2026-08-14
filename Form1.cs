@@ -19,18 +19,20 @@ namespace Bills
         private string _ItemName;
         private float _Quantity;
         private float _Price;
-        private float TaxRate = 0.15f;
+        private float _TaxRate = 0.15f;
+        private float _TotalBill;
+
         PrintDocument printDocument = new PrintDocument();
 
 
         Dictionary<string, float> price = new Dictionary<string, float>();
         private void AddtoData()
         {
-            price.Add("ورق A4 80 gm", 0.85f);
-            price.Add("ورق مقوى A4 180 gm", 2.70f);
-            price.Add("ورق A3 80 gm", 3.48f);
-            price.Add("تغليف سلك", 4.35f);
-            price.Add("تغليف شطرطون", 2.61f);
+            price.Add("ورق A4 80 gm", 1f);
+            price.Add("ورق مقوى A4 180 gm", 3f);
+            price.Add("ورق A3 80 gm", 4f);
+            price.Add("تغليف سلك", 5f);
+            price.Add("تغليف شطرطون",3f);
         }
       
         public Form1()
@@ -55,11 +57,10 @@ namespace Bills
         {
             return  _Price * _Quantity;
         }
-        private float GetTaxrate()
+        public float GetTaxrate()
         {
-            return   TaxRate;
+            return   _TaxRate;
         }
-
         private float Calculatingtaxwithintotal()
         {
             return GetTaxrate()*GetTotalPrice();
@@ -68,40 +69,36 @@ namespace Bills
         {
             return Calculatingtaxwithintotal() + GetTotalPrice();
         }
-
         private void UpdatePrice()
         {
             
-            lblTaxrate.Text=GetPriceTotalwithTaxrate().ToString("F2");
+            lblTaxrate.Text= GetTotalPrice().ToString("F2");
             
         }
-
         private void HandleChangePrice()
         {
             _Price = Convert.ToSingle(numPriceItem.Value);
             UpdatePrice();
         }
-
         private void HandleChangeQuantity()
         {
             _Quantity = Convert.ToSingle(numQuantity.Value);
             UpdatePrice() ;
 
         }
-
         private void Changeproduct()
         {
+            if(numPriceItem.Value==(decimal)_Price)
+            {
+                UpdatePrice();
+                return ;
+            }
             numQuantity.Value = (decimal)_Quantity;
             numPriceItem.Value = (decimal)_Price;
         }
         private void UpdateTotalBill()
         {
-            float TotalBill=0;
-            foreach (DataGridViewRow Row in dgvData.Rows)
-            {
-                TotalBill += Convert.ToSingle(Row.Cells[3].Value);
-            }
-            lbltotalfinal.Text=TotalBill.ToString();
+            lbltotalfinal.Text=_TotalBill.ToString();
         }
         private void AddItemToBill()
         {
@@ -111,13 +108,19 @@ namespace Bills
                     MessageBoxButtons.OK,MessageBoxIcon.Error);
                 return;
             }
-            float Total= (float)Math.Round(GetPriceTotalwithTaxrate(),2);
+            float Total= (float)Math.Round(GetTotalPrice(),2);
 
             dgvData.Rows.Add(_ItemName,_Quantity, _Price, Total);
 
+            _TotalBill += Total;
             UpdateTotalBill();
-            
-         
+
+
+        }
+
+        public float GetTotalBill()
+        {
+            return _TotalBill;
         }
         private void Reset()
         {
@@ -135,12 +138,14 @@ namespace Bills
            
             lblTaxrate.Text=0.ToString();
 
-        }
+           
 
+        }
         private void ResetForm()
         {
             Reset();
             dgvData.Rows.Clear();
+            _TotalBill = 0;
             lbltotalfinal.Text = string.Empty;
         }
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -163,7 +168,6 @@ namespace Bills
             UpdatePrice();
 
         }
-
         private void numPriceItem_ValueChanged(object sender, EventArgs e)
         {
             if (numPriceItem.Value != (decimal)_Price)
@@ -173,13 +177,11 @@ namespace Bills
             else
             UpdatePrice();
         }
-
         private void btnAdd_Click(object sender, EventArgs e)
         {
             AddItemToBill();
             Reset();
         }
-
         private float StartText(float PageWidth,Font font,string Title, PrintPageEventArgs e)
         {
            
@@ -187,16 +189,19 @@ namespace Bills
 
             return  PageWidth - sizeLogo.Width;
         }
-
         private float CenterText(float PageWidth, Font font, string Title, PrintPageEventArgs e)
         {
             SizeF sizeLogo = e.Graphics.MeasureString(Title, font);
 
             return (PageWidth - sizeLogo.Width)/2;
         }
+        private float GetTaxbyTotal(float Total,float Tax)
+        {
+            return Total * Tax;
+        }
         private void PrintDocument_PrintPage(object sender, PrintPageEventArgs e)
         {
-            e.Graphics.PageUnit=GraphicsUnit.Millimeter;
+            e.Graphics.PageUnit = GraphicsUnit.Millimeter;
 
             Pen Pen = new Pen(Brushes.Black, 0.5f);
 
@@ -204,17 +209,15 @@ namespace Bills
             // Size A4
             float PageWidth = 210;
 
-            float Height = 297;
+            //float Height = 297;
 
             float left = 10;
-        
+
             float right = 200;
 
             float headerY = 30;
 
             float center = 105;
-
-            float customerY = 40;
 
             float tableY = 80;
 
@@ -222,13 +225,14 @@ namespace Bills
 
 
             // Logo
-            string Logo = "محمود";
+            string Logo = "قرطاسية الراقية العالمية";
             Font fontLogo = new Font("PT Bold Heading", 20, FontStyle.Regular);
-      
-            float rightX = StartText(PageWidth,fontLogo,Logo,e);
 
-            e.Graphics.DrawString(Logo, fontLogo
-                ,Brushes.Black,rightX-20 , headerY);
+            float rightX = StartText(PageWidth, fontLogo, Logo, e);
+
+            e.Graphics.DrawString(Logo, fontLogo, Brushes.Black, rightX - 20, headerY);
+
+            e.Graphics.DrawImage(Properties.Resources.Logo, 90, 20, 30, 30);
 
             // Date
 
@@ -236,7 +240,30 @@ namespace Bills
 
             e.Graphics.DrawString(DateTimeNow
                 , new Font("Arial", 12, FontStyle.Regular),
-                Brushes.Black,right-50, headerY+15);
+                Brushes.Black, right - 50, headerY + 15);
+
+
+            // info Customer
+
+            string Customername = txtCustomerName.Text;
+            Font fontCn = new Font("Arial", 12, FontStyle.Regular);
+
+            float rigthCn = StartText(PageWidth, fontCn, Customername, e);
+
+            string Username = "اسم العميل";
+
+            e.Graphics.DrawString(Username, fontCn ,Brushes.Black, right - 20, headerY + 25);
+           
+            e.Graphics.DrawString(Customername, fontCn,Brushes.Black,rigthCn-37, headerY + 25);
+
+            string Tax = "الرقم الضريبي";
+            string Numtax=txtTax.Text;
+
+            float rigthTn = StartText(PageWidth, fontCn, Numtax, e);
+
+            e.Graphics.DrawString(Tax, fontCn, Brushes.Black, right - 20, headerY + 35);
+
+            e.Graphics.DrawString(Numtax, fontCn, Brushes.Black, rigthTn - 35, headerY + 35);
 
 
             // Adddres Bill
@@ -290,36 +317,37 @@ namespace Bills
 
             //Total Bill
 
-           e.Graphics.DrawString("إجمالي " ,
-               new Font("Arial", 16, FontStyle.Bold), Brushes.Black, right-28, totalY + 10);
+            Font fontTo = new Font("Arial", 16, FontStyle.Bold);
 
-            string Total=lbltotalfinal.Text;
+            float Taxrate = GetTaxbyTotal(_TotalBill, _TaxRate);
 
-            e.Graphics.DrawString(Total,
-     new Font("Arial", 16, FontStyle.Bold), Brushes.Black, center-55, totalY + 10);
+            float Total = _TotalBill - Taxrate;
 
-            e.Graphics.DrawString("الضريبة " ,
-              new Font("Arial", 16, FontStyle.Bold), Brushes.Black, right - 30, totalY + 20);
+            string stTotal = Total.ToString("F2");
 
-            string Tax= 5.ToString();
-            e.Graphics.DrawString(Tax,
-             new Font("Arial", 16, FontStyle.Bold), Brushes.Black, center - 55, totalY + 20);
+            e.Graphics.DrawString("إجمالي " , fontTo, Brushes.Black, right-28, totalY + 10);
 
-            e.Graphics.DrawString("الإجمالي شامل الضريبة ",
-             new Font("Arial", 16, FontStyle.Bold), Brushes.Black, right - 57, totalY + 30);
+            e.Graphics.DrawString(stTotal, fontTo, Brushes.Black, center-55, totalY + 10);
 
-            string TotalwithTax=6.ToString();
-              e.Graphics.DrawString(TotalwithTax,
-             new Font("Arial", 16, FontStyle.Bold), Brushes.Black, center - 55, totalY + 30);
+
+            
+            string stTaxrate = Taxrate.ToString("F2");
+
+            e.Graphics.DrawString("الضريبة " ,fontTo, Brushes.Black, right - 30, totalY + 20);
+
+            e.Graphics.DrawString(stTaxrate, fontTo, Brushes.Black, center - 55, totalY + 20);
+
+
+            string TotalwithTax = _TotalBill.ToString("F2");
+
+            e.Graphics.DrawString("الإجمالي شامل الضريبة ",fontTo, Brushes.Black, right - 57, totalY + 30);
+
+            e.Graphics.DrawString(TotalwithTax,fontTo, Brushes.Black, center - 55, totalY + 30);
         }
-
-
-
         private void btnNew_Click(object sender, EventArgs e)
         {
             ResetForm();
         }
-
         private void btnPrint_Click(object sender, EventArgs e)
         {
             if (dgvData.Rows.Count ==1 )
@@ -335,20 +363,72 @@ namespace Bills
 
     }
 
+        private void MoveNextControl(Control Next,Control Prev, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter || e.KeyCode == Keys.Down)
+            {
+                Next.Focus();
+                e.SuppressKeyPress = true;
+            }
+
+            if (e.KeyCode == Keys.Up)
+            {
+               Prev.Focus();
+                e.SuppressKeyPress = true;
+            }
+        }
         private void txtTax_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // منع إدخال أي شيء غير الأرقام
             if (!char.IsDigit(e.KeyChar) && e.KeyChar != '\b')
             {
                 e.Handled = true;
                 return;
             }
 
-            // منع إدخال أكثر من 15 رقم
             if (char.IsDigit(e.KeyChar) && txtTax.Text.Length >= 15)
             {
                 e.Handled = true;
             }
+        }
+
+        private void txtCustomerName_KeyDown(object sender, KeyEventArgs e)
+        {
+            MoveNextControl(txtTax, btnNew, e);
+        }
+
+        private void txtTax_KeyDown(object sender, KeyEventArgs e)
+        {
+            MoveNextControl(cbItems, txtCustomerName, e);
+        }
+
+        private void numQuantity_KeyDown(object sender, KeyEventArgs e)
+        {
+            MoveNextControl(numPriceItem,cbItems,e) ;
+        }
+
+        private void cbItems_KeyDown(object sender, KeyEventArgs e)
+        {
+            MoveNextControl(numQuantity,txtTax,e);
+        }
+
+        private void numPriceItem_KeyDown(object sender, KeyEventArgs e)
+        {
+            MoveNextControl(btnAdd, numQuantity, e);
+        }
+
+        private void btnAdd_KeyDown(object sender, KeyEventArgs e)
+        {
+            MoveNextControl(btnPrint,numPriceItem,e);
+        }
+
+        private void btnPrint_KeyDown(object sender, KeyEventArgs e)
+        {
+            MoveNextControl(btnNew, btnAdd, e);
+        }
+
+        private void btnNew_KeyDown(object sender, KeyEventArgs e)
+        {
+            MoveNextControl(txtCustomerName, btnPrint, e);
         }
     }
 }
