@@ -14,9 +14,11 @@ namespace Bills
         [STAThread]
         static void Main()
         {
+            QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());
+
         }
     }
 }
